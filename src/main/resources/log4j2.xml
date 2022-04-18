@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--日志级别以及优先级排序: OFF>FATAL>ERROR>WARN>INFO>DEBUG>TRACE>ALL-->
+<!--monitorInterval，含义是每隔多少秒重新读取配置文件-->
+<configuration status="INFO" monitorInterval="5">
+    <!-- 自定义属性 -->
+    <Properties>
+        <Property name="log.dir">logs</Property>
+        <Property name="displayName">rolling</Property>
+        <Property name="pattern">%highlight{[%d{yyyy-MM-dd HH:mm:ss.SSS}]} [%Blue{%-5level}] [%green{%t}] [%l] [%c] -
+            %message%n
+        </Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%red{[%d{yyyy-MM-dd HH:mm:ss.SSS}]} %highlight{[%-5level]} %green{[%t]} %blue{[%l]} [%c] -%yellow{%message%n}"/>
+            <Filters>
+                <ThresholdFilter level="INFO" onMatch="accept" onMismatch="deny"/>
+            </Filters>
+        </Console>
+
+        <RollingFile name="rollingFile"
+                     fileName="${log.dir}/${displayName}.log"
+                     filePattern="${log.dir}/${displayName}_%i.log.gz"
+                     append="true">
+            <PatternLayout pattern="${pattern}"/>
+
+            <Filters>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="NEUTRAL"/>
+            </Filters>
+
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+
+        <!-- info级别的日志信息 -->
+        <RollingRandomAccessFile name="infoLog" fileName="${log.dir}/info.log"
+                                 filePattern="${log.dir}/info/info_%date{yyyy-MM-dd}_%i.log.gz"
+                                 append="true">
+            <PatternLayout pattern="${pattern}"/>
+
+            <Filters>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="NEUTRAL"/>
+            </Filters>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="200MB"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="3">
+                <Delete basePath="${log.dir}/info/" maxDepth="1">
+                    <IfFileName glob="info*.log.gz"/>
+                    <IfLastModified age="10d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <!-- error级别的日志信息 -->
+        <RollingRandomAccessFile name="errorLog"
+                                 fileName="${log.dir}/error.log"
+                                 filePattern="${log.dir}/error/error_%d{yyyy-MM-dd}.log.gz"
+                                 append="true">
+            <PatternLayout pattern="${pattern}"/>
+
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="3">
+                <Delete basePath="${log.dir}/error/" maxDepth="1">
+                    <IfFileName glob="error*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+    </Appenders>
+
+    <Loggers>
+        <!--Root节点用来指定项目的根日志，如果没有类似上面所配置的单独指定的logger，那么就会默认使用该Root日志输出-->
+        <Root level="INFO" includeLocation="true">
+            <!-- 用来指定该日志输出到哪个Appender -->
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="infoLog"/>
+            <AppenderRef ref="errorLog"/>
+            <AppenderRef ref="rollingFile"/>
+        </Root>
+    </Loggers>
+
+</configuration>
